@@ -2,6 +2,7 @@ import streamlit as st
 import pandas as pd
 import random
 import time
+import plotly.express as px
 
 st.set_page_config(page_title="Mool AI Orchestration Chatbot", layout="wide")
 
@@ -26,6 +27,9 @@ metrics_db = {
 COST_PER_OPENAI_CALL = 0.02  # Example cost per call
 COST_PER_MOOL_CALL = 0.01  # Example cheaper cost per call
 
+# Feature flag toggle for Mool AI
+toggle_mool = st.sidebar.checkbox("Enable Mool AI Orchestration", value=True)
+
 def route_call():
     """ Simulates call distribution between high and low models """
     if random.random() < 0.8:
@@ -37,9 +41,11 @@ def route_call():
 
 if page == "Chatbot":
     st.subheader("Mool AI Chatbot")
+    chat_history = st.session_state.get("chat_history", [])
+    
     user_input = st.text_input("Ask a question:")
     if st.button("Send") and user_input:
-        response_type = "mool" if random.random() > 0.5 else "openai"
+        response_type = "mool" if toggle_mool else "openai"
         status = "success" if random.random() > 0.1 else "fail"
         
         metrics_db["mool_calls"] += 1 if response_type == "mool" else 0
@@ -48,12 +54,19 @@ if page == "Chatbot":
         metrics_db["failed_calls"] += 1 if status == "fail" else 0
         
         routed_model = route_call()
-        st.write(f"Response from: **{response_type.upper()} Model**")
-        st.write(f"Routing Decision: Sent to **{routed_model} model**")
+        response_text = f"Response from: **{response_type.upper()} Model**\nRouting Decision: Sent to **{routed_model} model**"
         if status == "success":
-            st.success("Response generated successfully!")
+            response_text += "\nResponse generated successfully!"
         else:
-            st.error("Failed to generate response. Try again.")
+            response_text += "\nFailed to generate response. Try again."
+        
+        chat_history.append((user_input, response_text))
+        st.session_state["chat_history"] = chat_history
+    
+    for user_msg, bot_msg in chat_history[-5:]:
+        st.write(f"**You:** {user_msg}")
+        st.write(f"**Mool AI:** {bot_msg}")
+        st.markdown("---")
 
 elif page == "Dashboard":
     st.subheader("API Call Metrics & Cost Analysis")
@@ -65,6 +78,12 @@ elif page == "Dashboard":
             [metrics_db['openai_calls'], metrics_db['mool_calls'], metrics_db['successful_calls'], metrics_db['failed_calls']]
         ], columns=["OpenAI Calls", "Mool AI Calls", "Successful Calls", "Failed Calls"])
         st.table(df)
+        
+        # Visualization
+        fig = px.pie(names=["Higher Model", "Lower Model"],
+                     values=[metrics_db['higher_model_calls'], metrics_db['lower_model_calls']],
+                     title="Routing Distribution (Higher vs. Lower Model)")
+        st.plotly_chart(fig)
     
     with col2:
         st.subheader("Cost Analysis")
@@ -73,6 +92,14 @@ elif page == "Dashboard":
         st.metric(label="Total Cost (OpenAI)", value=f"${total_cost_openai:.4f}")
         st.metric(label="Total Cost (Mool AI)", value=f"${total_cost_mool:.4f}")
         st.metric(label="Savings", value=f"${total_cost_openai - total_cost_mool:.4f}")
+        
+        # Bar chart comparison
+        cost_df = pd.DataFrame({
+            "Method": ["OpenAI", "Mool AI"],
+            "Cost": [total_cost_openai, total_cost_mool]
+        })
+        fig_cost = px.bar(cost_df, x="Method", y="Cost", title="Cost Comparison (OpenAI vs. Mool AI)", text_auto=True)
+        st.plotly_chart(fig_cost)
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
