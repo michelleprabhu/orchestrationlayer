@@ -3,6 +3,11 @@ import pandas as pd
 import random
 import time
 import plotly.express as px
+import openai  # Import OpenAI API
+
+# Set your OpenAI API key (replace with your own key)
+OPENAI_API_KEY = "your-openai-api-key"
+openai.api_key = OPENAI_API_KEY
 
 st.set_page_config(page_title="Mool AI Orchestration Chatbot", layout="wide")
 
@@ -13,15 +18,18 @@ st.markdown("## Chat with Mool AI and Analyze API Call Metrics")
 st.sidebar.header("Navigation")
 page = st.sidebar.radio("Go to", ["Chatbot", "Dashboard"])
 
-# Simulated Database for Metrics
-metrics_db = {
-    "openai_calls": 0,
-    "mool_calls": 0,
-    "successful_calls": 0,
-    "failed_calls": 0,
-    "higher_model_calls": 0,
-    "lower_model_calls": 0
-}
+# Initialize session state for metrics if not already set
+if "metrics_db" not in st.session_state:
+    st.session_state.metrics_db = {
+        "openai_calls": 0,
+        "mool_calls": 0,
+        "successful_calls": 0,
+        "failed_calls": 0,
+        "higher_model_calls": 0,
+        "lower_model_calls": 0
+    }
+
+metrics_db = st.session_state.metrics_db
 
 # Cost Configurations
 COST_PER_OPENAI_CALL = 0.02  # Example cost per call
@@ -30,15 +38,16 @@ COST_PER_MOOL_CALL = 0.01  # Example cheaper cost per call
 # Feature flag toggle for Mool AI
 toggle_mool = st.sidebar.checkbox("Enable Mool AI Orchestration", value=True)
 
-# Improved AI response generator
+# Function to generate response using OpenAI GPT-4
 def generate_response(question):
-    question = question.lower().strip()
-    responses = {
-        "what is the capital of india": "The capital of India is New Delhi.",
-        "who is the president of the usa": "The current President of the USA is Joe Biden.",
-        "what is ai": "AI stands for Artificial Intelligence, which enables machines to learn and solve problems like humans."
-    }
-    return responses.get(question, f"I'm an AI, but I don't have an answer for '{question}'. Try asking something else!")
+    try:
+        response = openai.ChatCompletion.create(
+            model="gpt-4",
+            messages=[{"role": "user", "content": question}]
+        )
+        return response["choices"][0]["message"]["content"]
+    except Exception as e:
+        return f"Error: {str(e)}"
 
 # Function to simulate routing decisions
 def route_call():
@@ -116,3 +125,4 @@ elif page == "Dashboard":
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
+
