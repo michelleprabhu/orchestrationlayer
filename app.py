@@ -3,8 +3,7 @@ import pandas as pd
 import random
 import time
 import plotly.express as px
-import openai
-
+import openai  # Import OpenAI API
 
 st.set_page_config(page_title="Mool AI Orchestration Chatbot", layout="wide")
 
@@ -38,18 +37,18 @@ COST_PER_MOOL_CALL = 0.01  # Example cheaper cost per call
 # Feature flag toggle for Mool AI
 toggle_mool = st.sidebar.checkbox("Enable Mool AI Orchestration", value=True)
 
-# Function to generate response using OpenAI GPT-4
+# Function to generate response using OpenAI GPT-4 (Updated for openai>=1.0.0)
 def generate_response(question):
     if not openai_api_key:
         return "Error: OpenAI API Key is required. Please enter it in the sidebar."
     
     try:
-        openai.api_key = openai_api_key
-        response = openai.ChatCompletion.create(
+        client = openai.OpenAI(api_key=openai_api_key)
+        response = client.chat.completions.create(
             model="gpt-4",
             messages=[{"role": "user", "content": question}]
         )
-        return response["choices"][0]["message"]["content"]
+        return response.choices[0].message.content
     except Exception as e:
         return f"Error: {str(e)}"
 
@@ -129,3 +128,4 @@ elif page == "Dashboard":
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
+
