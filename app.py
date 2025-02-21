@@ -5,10 +5,6 @@ import time
 import plotly.express as px
 import openai  # Import OpenAI API
 
-# Set your OpenAI API key (replace with your own key)
-OPENAI_API_KEY = "your-openai-api-key"
-openai.api_key = OPENAI_API_KEY
-
 st.set_page_config(page_title="Mool AI Orchestration Chatbot", layout="wide")
 
 st.title("Mool AI Orchestration Chatbot")
@@ -17,6 +13,9 @@ st.markdown("## Chat with Mool AI and Analyze API Call Metrics")
 # Sidebar Navigation
 st.sidebar.header("Navigation")
 page = st.sidebar.radio("Go to", ["Chatbot", "Dashboard"])
+
+# Input OpenAI API key in the sidebar
+openai_api_key = st.sidebar.text_input("Enter OpenAI API Key", type="password")
 
 # Initialize session state for metrics if not already set
 if "metrics_db" not in st.session_state:
@@ -40,7 +39,11 @@ toggle_mool = st.sidebar.checkbox("Enable Mool AI Orchestration", value=True)
 
 # Function to generate response using OpenAI GPT-4
 def generate_response(question):
+    if not openai_api_key:
+        return "Error: OpenAI API Key is required. Please enter it in the sidebar."
+    
     try:
+        openai.api_key = openai_api_key
         response = openai.ChatCompletion.create(
             model="gpt-4",
             messages=[{"role": "user", "content": question}]
@@ -125,4 +128,3 @@ elif page == "Dashboard":
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
-
