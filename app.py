@@ -3,6 +3,7 @@ import pandas as pd
 import random
 import time
 import plotly.express as px
+import openai
 
 
 st.set_page_config(page_title="Mool AI Orchestration Chatbot", layout="wide")
