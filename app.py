@@ -3,7 +3,7 @@ import pandas as pd
 import random
 import time
 import plotly.express as px
-import openai  # Import OpenAI API
+import openai
 
 st.set_page_config(page_title="Mool AI Orchestration Chatbot", layout="wide")
 
@@ -31,22 +31,23 @@ if "metrics_db" not in st.session_state:
 metrics_db = st.session_state.metrics_db
 
 # Cost Configurations
-COST_PER_OPENAI_CALL = 0.02  # Example cost per call
-COST_PER_MOOL_CALL = 0.01  # Example cheaper cost per call
+COST_PER_OPENAI_CALL = 0.02
+COST_PER_MOOL_CALL = 0.01
 
 # Feature flag toggle for Mool AI
 toggle_mool = st.sidebar.checkbox("Enable Mool AI Orchestration", value=True)
 
-# Function to generate response using OpenAI GPT-4 (Updated for openai>=1.0.0)
+# Function to generate response using OpenAI GPT-4
 def generate_response(question):
     if not openai_api_key:
         return "Error: OpenAI API Key is required. Please enter it in the sidebar."
     
     try:
-        client = openai.OpenAI(api_key=openai_api_key)
+        client = openai.Client()
         response = client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": question}]
+            messages=[{"role": "user", "content": question}],
+            api_key=openai_api_key
         )
         return response.choices[0].message.content
     except openai.OpenAIError as e:
@@ -56,7 +57,6 @@ def generate_response(question):
 
 # Function to simulate routing decisions
 def route_call():
-    """ Simulates call distribution between high and low models """
     if random.random() < 0.8:
         metrics_db["higher_model_calls"] += 1
         return "higher"
@@ -106,7 +106,6 @@ elif page == "Dashboard":
         ], columns=["OpenAI Calls", "Mool AI Calls", "Successful Calls", "Failed Calls"])
         st.table(df)
         
-        # Visualization
         fig = px.pie(names=["Higher Model", "Lower Model"],
                      values=[metrics_db['higher_model_calls'], metrics_db['lower_model_calls']],
                      title="Routing Distribution (Higher vs. Lower Model)")
@@ -120,7 +119,6 @@ elif page == "Dashboard":
         st.metric(label="Total Cost (Mool AI)", value=f"${total_cost_mool:.4f}")
         st.metric(label="Savings", value=f"${total_cost_openai - total_cost_mool:.4f}")
         
-        # Bar chart comparison
         cost_df = pd.DataFrame({
             "Method": ["OpenAI", "Mool AI"],
             "Cost": [total_cost_openai, total_cost_mool]
@@ -130,4 +128,3 @@ elif page == "Dashboard":
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
-
