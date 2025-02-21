@@ -30,6 +30,16 @@ COST_PER_MOOL_CALL = 0.01  # Example cheaper cost per call
 # Feature flag toggle for Mool AI
 toggle_mool = st.sidebar.checkbox("Enable Mool AI Orchestration", value=True)
 
+# Simple AI response simulator
+def generate_response(question):
+    responses = {
+        "what is the capital of india": "The capital of India is New Delhi.",
+        "who is the president of the usa": "The current President of the USA is Joe Biden.",
+        "what is ai": "AI stands for Artificial Intelligence, which enables machines to simulate human intelligence."
+    }
+    return responses.get(question.lower(), "I'm sorry, I don't have an answer for that.")
+
+# Function to simulate routing decisions
 def route_call():
     """ Simulates call distribution between high and low models """
     if random.random() < 0.8:
@@ -55,8 +65,10 @@ if page == "Chatbot":
         
         routed_model = route_call()
         response_text = f"Response from: **{response_type.upper()} Model**\nRouting Decision: Sent to **{routed_model} model**"
+        
         if status == "success":
-            response_text += "\nResponse generated successfully!"
+            ai_response = generate_response(user_input)
+            response_text += f"\nAI Response: {ai_response}"
         else:
             response_text += "\nFailed to generate response. Try again."
         
