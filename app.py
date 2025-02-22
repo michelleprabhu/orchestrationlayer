@@ -5,12 +5,6 @@ import time
 import plotly.express as px
 import openai
 
-# Attempt to import Controller from routellm
-try:
-    from routellm import Controller
-except ImportError:
-    Controller = None
-    
 st.set_page_config(page_title="Mool AI Orchestration Chatbot", layout="wide")
 
 st.title("Mool AI Orchestration Chatbot")
@@ -22,25 +16,6 @@ page = st.sidebar.radio("Go to", ["Chatbot", "Dashboard"])
 
 # Input OpenAI API key in the sidebar
 openai_api_key = st.sidebar.text_input("Enter OpenAI API Key", type="password")
-
-# Define router, models, and configurations
-router = "mf"
-strong_model = "gpt-40"
-weak_model = "gpt-3.5-turbo"
-router_config = {"mf": {"checkpoint_path": "routellm/mf_gpt4_augmented"}}
-
-# Initialize the Controller if available
-if Controller:
-    try:
-        controller = Controller(
-            routers=[router],
-            strong_model=strong_model,
-            weak_model=weak_model
-        )
-    except Exception as e:
-        st.error(f"Error initializing controller: {e}")
-else:
-    st.warning("Controller module not found. Make sure routellm is installed.")
 
 # Initialize session state for metrics if not already set
 if "metrics_db" not in st.session_state:
