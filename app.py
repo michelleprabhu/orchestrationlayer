@@ -43,13 +43,13 @@ def generate_response(question):
         return "Error: OpenAI API Key is required. Please enter it in the sidebar."
     
     try:
-        response = openai.ChatCompletion.create(
+        client = openai.Client(api_key=openai_api_key)
+        response = client.chat.completions.create(
             model="gpt-4",
-            messages=[{"role": "user", "content": question}],
-            api_key=openai_api_key
+            messages=[{"role": "user", "content": question}]
         )
-        return response["choices"][0]["message"]["content"]
-    except openai.error.OpenAIError as e:
+        return response.choices[0].message.content
+    except openai.OpenAIError as e:
         return f"OpenAI API Error: {str(e)}"
     except Exception as e:
         return f"Error: {str(e)}"
@@ -128,4 +128,3 @@ elif page == "Dashboard":
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
-
