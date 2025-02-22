@@ -37,17 +37,31 @@ COST_PER_MOOL_CALL = 0.01
 # Feature flag toggle for Mool AI
 toggle_mool = st.sidebar.checkbox("Enable Mool AI Orchestration", value=True)
 
-# Function to generate response using OpenAI GPT-4
+# Function to generate response using OpenAI API
 def generate_response(question):
     if not openai_api_key:
         return "Error: OpenAI API Key is required. Please enter it in the sidebar."
     
     try:
         client = openai.Client(api_key=openai_api_key)
-        response = client.chat.completions.create(
-            model="gpt-4",
-            messages=[{"role": "user", "content": question}]
-        )
+        model_name = "gpt-4-turbo"  # Use GPT-4 Turbo by default
+        
+        # Try GPT-4 Turbo first, fallback to GPT-3.5 Turbo if needed
+        try:
+            response = client.chat.completions.create(
+                model=model_name,
+                messages=[{"role": "user", "content": question}]
+            )
+        except openai.OpenAIError as e:
+            if "model_not_found" in str(e):
+                model_name = "gpt-3.5-turbo"
+                response = client.chat.completions.create(
+                    model=model_name,
+                    messages=[{"role": "user", "content": question}]
+                )
+            else:
+                raise e
+        
         return response.choices[0].message.content
     except openai.OpenAIError as e:
         return f"OpenAI API Error: {str(e)}"
@@ -128,3 +142,4 @@ elif page == "Dashboard":
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
+
