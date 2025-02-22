@@ -17,6 +17,22 @@ page = st.sidebar.radio("Go to", ["Chatbot", "Dashboard"])
 # Input OpenAI API key in the sidebar
 openai_api_key = st.sidebar.text_input("Enter OpenAI API Key", type="password")
 
+# Define router, models, and configurations
+router = "mf"
+strong_model = "gpt-40"
+weak_model = "gpt-3.5-turbo"
+router_config = {"mf": {"checkpoint_path": "routellm/mf_gpt4_augmented"}}
+
+# Initialize the Controller
+try:
+    controller = Controller(
+        routers=[router],
+        strong_model=strong_model,
+        weak_model=weak_model
+    )
+except Exception as e:
+    st.error(f"Error initializing controller: {e}")
+
 # Initialize session state for metrics if not already set
 if "metrics_db" not in st.session_state:
     st.session_state.metrics_db = {
@@ -44,29 +60,31 @@ def generate_response(question):
     
     try:
         client = openai.Client(api_key=openai_api_key)
-        model_name = "gpt-4-turbo"  # Use GPT-4 Turbo by default
+        model_name = "gpt-4-turbo"
         
-        # Try GPT-4 Turbo first, fallback to GPT-3.5 Turbo if needed
         try:
             response = client.chat.completions.create(
                 model=model_name,
                 messages=[{"role": "user", "content": question}]
             )
         except openai.OpenAIError as e:
-            if "model_not_found" in str(e):
+            error_message = str(e)
+            if "model_not_found" in error_message:
                 model_name = "gpt-3.5-turbo"
                 response = client.chat.completions.create(
                     model=model_name,
                     messages=[{"role": "user", "content": question}]
                 )
+            elif "insufficient_quota" in error_message:
+                return "⚠️ OpenAI API quota exceeded. Please check your plan and billing details."
             else:
                 raise e
         
         return response.choices[0].message.content
     except openai.OpenAIError as e:
-        return f"OpenAI API Error: {str(e)}"
+        return f"⚠️ OpenAI API Error: {str(e)}"
     except Exception as e:
-        return f"Error: {str(e)}"
+        return f"⚠️ Unexpected Error: {str(e)}"
 
 # Function to simulate routing decisions
 def route_call():
@@ -142,4 +160,3 @@ elif page == "Dashboard":
 
 st.sidebar.markdown("---")
 st.sidebar.text("Mool AI Chatbot v1.0")
-
